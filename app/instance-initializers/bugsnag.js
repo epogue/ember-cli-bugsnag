@@ -1,6 +1,6 @@
 import Ember  from 'ember';
 import config from '../config/environment';
-import { getContext, generateError } from 'ember-cli-bugsnag/utils/errors';
+import { getContext, generateError, ignoreError } from 'ember-cli-bugsnag/utils/errors';
 
 var currentEnv = config.environment;
 
@@ -15,18 +15,30 @@ export default {
       let router = owner.lookup('router:main');
 
       Ember.onerror = function (error) {
+        if (error && ignoreError(error)) {
+          return;
+        }
+
         Bugsnag.context = getContext(router);
         Bugsnag.notifyException(error);
         console.error(error.stack);
       };
 
       Ember.RSVP.on('error', function(error) {
+        if (error && ignoreError(error)) {
+          return;
+        }
+
         Bugsnag.context = getContext(router);
         Bugsnag.notifyException(error);
         console.error(error.stack);
       });
 
       Ember.Logger.error = function (message, cause, stack) {
+        if (error && ignoreError(message)) {
+          return;
+        }
+
         Bugsnag.context = getContext(router);
         Bugsnag.notifyException(generateError(cause, stack), message);
         console.error(stack);
